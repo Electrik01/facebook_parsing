@@ -7,37 +7,53 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
+
+def scroll_down(driver):
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(3)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+
 
 def get_driver(driver_path):
     chrome_options = webdriver.ChromeOptions()
     prefs = {'profile.default_content_setting_values.notifications': 2}
     chrome_options.add_experimental_option('prefs', prefs)
-
+    chrome_options.add_argument("--start-maximized")
     driver = webdriver.Chrome(
         executable_path=driver_path, chrome_options=chrome_options
     )
     return driver
 
-def login(driver,login):
+def loginToFacebook(driver,login,password):
     driver.get('https://www.facebook.com/')
     login_element = driver.find_element_by_name('email')
     password_element = driver.find_element_by_name('pass')
     enter_element = driver.find_element_by_name('login')
     login_element.send_keys(login)
-    password_element.send_keys(getpass('Password: '))
+    password_element.send_keys(password)
     enter_element.click()
 
-def get_friend_list(driver,friends_range):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")    
-    time.sleep(10)
+def get_friend_list(driver):
     friend_list = []
-    for iter in range(friends_range):
-        items = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH,FRIEND_PATH.format(iter+1))))
-        friend_list.append(
-            items.find_element_by_xpath('.//div[2]/div[1]/a/span')
-                .get_attribute('innerText')
-        )
+    iter = 1     
+    scroll_down(driver)
+    while True:
+        try:
+            items = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH,FRIEND_PATH.format(iter))))
+            friend_list.append(
+                items.find_element_by_xpath("div[2]/div[1]").text
+            )
+            iter+=1
+        except:
+            break
     return friend_list
 
 def click_object(driver, xpath):
@@ -53,13 +69,14 @@ def write_to_file(path,list_):
     file.close()
 
 def workflow():
+    login = input("Login: ")
+    password = getpass("Password: ")
     driver = get_driver(DRIVER_PATH)
-    login(driver,LOGIN)
+    loginToFacebook(driver,login,password)
     click_object(driver,PROFILE_PATH)
     click_object(driver,FRIENDS_PATH)
-    friend_list = get_friend_list(driver,FRIENDS_RANGE)
+    friend_list = get_friend_list(driver)
     write_to_file(FILE_PATH,friend_list)
-
 
 
 
