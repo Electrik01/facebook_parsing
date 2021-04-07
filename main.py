@@ -7,13 +7,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
 
 def scroll_down(driver):
+    time.sleep(2)
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)
+        time.sleep(2)
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
             break
@@ -47,24 +48,19 @@ def get_friend_list(driver):
     while True:
         try:
             items = WebDriverWait(driver, 10).until(
-                    EC.visibility_of_all_elements_located((By.XPATH,FRIEND_PATH.format(iter))))
+                    EC.presence_of_element_located((By.XPATH,FRIEND_PATH.format(iter))))
             friend_list.append(
-                items.find_element_by_xpath("div[2]/div[1]").text
-                #items.find_element_by_tag_name("a").get_attribute('href')
-            )
+                [
+                items.find_element_by_xpath("div[2]/div[1]").text,
+                items.find_element_by_tag_name('a').get_attribute("href")
+                ])
             iter+=1
-        except Exception as e:
-            print(e)
+        except TimeoutException:
             break
     return friend_list
 
-def get_count_friends(driver):
-    count = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-            (By.XPATH,COUNT_FRIENDS)
-            )).text
-
 def click_object(driver, xpath):
+    #driver.execute_script("window.scrollTo(0, 0);")
     profile = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located(
             (By.XPATH,xpath)
@@ -73,7 +69,7 @@ def click_object(driver, xpath):
 def write_to_file(path,list_):
     file = open(path,'w',encoding='utf-8')
     for item in list_:
-        file.write(str(item)+'\n')
+        file.write('{}   |  {}\n'.format(item[0],item[1]))
     file.close()
 
 def workflow():
@@ -82,9 +78,6 @@ def workflow():
     driver = get_driver(DRIVER_PATH)
     loginToFacebook(driver,login,password)
     click_object(driver,PROFILE_PATH)
-    #count = get_count_friends(driver)
-    #print()
-    #time.sleep(60)
     click_object(driver,FRIENDS_PATH)
     friend_list = get_friend_list(driver)
     write_to_file(FILE_PATH,friend_list)
