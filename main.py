@@ -47,17 +47,22 @@ def get_friend_list(driver):
     while True:
         try:
             items = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH,FRIEND_PATH.format(iter))))
+                    EC.visibility_of_all_elements_located((By.XPATH,FRIEND_PATH.format(iter))))
             friend_list.append(
-                [
-                items.find_element_by_xpath("div[2]/div[1]").text,
-                items.find_element_by_tag_name('a').get_attribute("href")
-                ])
+                items.find_element_by_xpath("div[2]/div[1]").text
+                #items.find_element_by_tag_name("a").get_attribute('href')
+            )
             iter+=1
         except Exception as e:
             print(e)
             break
     return friend_list
+
+def get_count_friends(driver):
+    count = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+            (By.XPATH,COUNT_FRIENDS)
+            )).text
 
 def click_object(driver, xpath):
     profile = WebDriverWait(driver, 10).until(
@@ -68,7 +73,7 @@ def click_object(driver, xpath):
 def write_to_file(path,list_):
     file = open(path,'w',encoding='utf-8')
     for item in list_:
-        file.write('{}   |  {}\n'.format(item[0],item[1]))
+        file.write(str(item)+'\n')
     file.close()
 
 def workflow():
@@ -77,6 +82,9 @@ def workflow():
     driver = get_driver(DRIVER_PATH)
     loginToFacebook(driver,login,password)
     click_object(driver,PROFILE_PATH)
+    #count = get_count_friends(driver)
+    #print()
+    #time.sleep(60)
     click_object(driver,FRIENDS_PATH)
     friend_list = get_friend_list(driver)
     write_to_file(FILE_PATH,friend_list)
