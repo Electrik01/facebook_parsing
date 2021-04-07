@@ -49,10 +49,13 @@ def get_friend_list(driver):
             items = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH,FRIEND_PATH.format(iter))))
             friend_list.append(
-                items.find_element_by_xpath("div[2]/div[1]").text
-            )
+                [
+                items.find_element_by_xpath("div[2]/div[1]").text,
+                items.find_element_by_tag_name('a').get_attribute("href")
+                ])
             iter+=1
-        except:
+        except Exception as e:
+            print(e)
             break
     return friend_list
 
@@ -65,7 +68,7 @@ def click_object(driver, xpath):
 def write_to_file(path,list_):
     file = open(path,'w',encoding='utf-8')
     for item in list_:
-        file.write(str(item)+'\n')
+        file.write('{}   |  {}\n'.format(item[0],item[1]))
     file.close()
 
 def workflow():
